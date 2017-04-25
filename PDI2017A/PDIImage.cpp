@@ -17,7 +17,7 @@ CPDIImage::~CPDIImage()
 {}
 
 
-CPDIImage::PIXEL& CPDIImage::operator()(int i, int j){
+CPDIImage::PIXEL& CPDIImage::operator()(int i, int j) {
 	static PIXEL Dummy;
 	if (i >= 0 && j >= 0 && i < m_nHSize && j < m_nVSize)
 		return m_pBuffer[j*m_nHSize + i];
@@ -63,7 +63,7 @@ CPDIImage * CPDIImage::CreateFromFile(const char * pszFileName)
 	/*	ETAPAS
 		1.- Lectura del encabezado de archivo DIB.
 		2.- Lectura de la información de imagen.
-		3.- Lectura de los pixeles/índices. 
+		3.- Lectura de los pixeles/índices.
 	*/
 	// Tipos de codificación de imagen: Píxel o Paletizado (indices)
 	// La diferencia entre las codificaciones entre Pixel o Paletizado es que cada pixel guarda el color rgb, mientras que el paletizado utiliza
@@ -82,7 +82,7 @@ CPDIImage * CPDIImage::CreateFromFile(const char * pszFileName)
 	if (bfh.bfType != 'MB')
 		return NULL;
 	in.read((char*)&bfh.bfSize, sizeof(bfh) - sizeof(bfh.bfType));
-	
+
 	// 2.- Lectura del ecabezado de imagen.
 	BITMAPINFOHEADER bih;
 	memset(&bih, 0, sizeof(bih));
@@ -91,114 +91,125 @@ CPDIImage * CPDIImage::CreateFromFile(const char * pszFileName)
 		return NULL;
 	in.read((char*)&bih.biWidth, sizeof(bih) - sizeof(bih.biSize));
 
+	CPDIImage* pImage = Create(bih.biWidth, bih.biHeight);
+	int nRowLenght = 4 * ((bih.biBitCount*bih.biWidth + 31) / 32);//mide en bits multiplos de 32, el cluster es de 32 bits.
+	/*
+	- Formato 1bpp 2 colores
+	- Formato 4bpp 16 colores
+	- Formato 8bpp 256 colores
+	- Formato 24bpp no hay paleta
+	*/
+	//Windows detecta bgr, DirectX detecta rgb
 	switch (bih.biBitCount)
 	{
-	case 1:{ // 1bpp Monocromático Paletizadas. (bpp = bit por pixel) 
-			 // Tarea	 // Colores: Blanco -> 1 & Negro -> 0
-		RGBQUAD Paleta[2];
+	case 1: {
+		RGBQUAD paleta[2];
 		int nColors = bih.biClrUsed ? bih.biClrUsed : 2;
-		in.read((char*)Paleta, nColors * sizeof(RGBQUAD));
-
-		unsigned long RowLength = bih.biWidth + bih.biBitCount;
-		unsigned char* pRow = new unsigned char[RowLength];
-		CPDIImage* pImage = Create(bih.biWidth, bih.biHeight);
-		for (int j = 0; j < bih.biHeight; j++) {
-			in.read((char*)pRow, RowLength);
-			for (int i = 0; i < bih.biWidth; i++) {
-				PIXEL& Pixel = (*pImage)(i, j);
-				if (pRow[i] > 0) {
-					RGBQUAD& Color = Paleta[1];
-					Pixel.r = Color.rgbRed;
-					Pixel.g = Color.rgbGreen;
-					Pixel.b = Color.rgbBlue;
-					Pixel.a = -1;
-				}
-				else {
-					RGBQUAD& Color = Paleta[0];
-					Pixel.r = Color.rgbRed;
-					Pixel.g = Color.rgbGreen;
-					Pixel.b = Color.rgbBlue;
-					Pixel.a = -1;
+		in.read((char*)paleta, nColors * sizeof(RGBQUAD));
+		unsigned char* pRow = new unsigned char[nRowLenght];
+		int block = (bih.biWidth + 7) / 8, totalBits;
+		for (int j = bih.biHeight - 1; j >= 0; j--) {
+			in.read((char*)pRow, nRowLenght);
+			for (int i = 0; i < block; i++) {
+				totalBits = ((i + 1) * 8) <= bih.biWidth ? 8 : bih.biWidth % 8;
+				for (int x = 0; x < totalBits; x++) {
+					PIXEL& pixel = (*pImage)((i * 8) + x, j);
+					RGBQUAD& color = paleta[(pRow[i] >> (7 - x)) & 0x01];
+					pixel.b = color.rgbRed;
+					pixel.g = color.rgbGreen;
+					pixel.r = color.rgbBlue;
+					pixel.a = 0xff;
 				}
 			}
 		}
-		delete[] pRow;
-		return pImage;
+		delete[] pRow;//free(pRow);
+		break;
 	}
-	/*
-	- Formato Monocromático: Cada byte representa 8 pixeles.
-	- Formato 16 colores: Cada byte representa 2 pixeles.
-	- Formato 256 colores/ 8 bits: Cada byte representa un pixel.
-	- Formato 24 bits: Cada 3 bytes representan un pixel.
-	*/
-	case 4: {// 4bpp 16 colores Paletizadas. // Cada byte representa 2 pixeles, es decir, 4 bits son de un pixel y otros 4 bits de otro pixel.
-			 // Tarea 
-		RGBQUAD Paleta[16];
-		int nColors = bih.biClrUsed == 0 ? 16 : bih.biClrUsed;
-		in.read((char*)Paleta, nColors * sizeof(RGBQUAD));
-
-		unsigned long RowLength =  4 * ((bih.biWidth * bih.biBitCount + 8) / 16);
-		unsigned char* pRow = new unsigned char[RowLength];
-		CPDIImage* pImage = Create(bih.biWidth, bih.biHeight);
-		for (int j = 0; j < bih.biHeight; j++) {
-			in.read((char*)pRow, RowLength);
-			for (int i = 0; i < bih.biWidth; i++) {
-				PIXEL& Pixel = (*pImage)(i, bih.biHeight - j - 1);
-				Pixel.r = Paleta[pRow[i]].rgbRed;
-				Pixel.g = Paleta[pRow[i]].rgbGreen;
-				Pixel.b = Paleta[pRow[i]].rgbBlue;
-				Pixel.a = -1;
+	case 4: {
+		RGBQUAD paleta[16];
+		int nColors = bih.biClrUsed ? bih.biClrUsed : 16;
+		in.read((char*)paleta, nColors * sizeof(RGBQUAD));
+		int block = (bih.biWidth + 1) / 2;
+		unsigned char* pRow = (unsigned char*) malloc(nRowLenght);
+		bool flag;
+		for (int j = bih.biHeight - 1; j >= 0; j--) {
+			in.read((char*)pRow, nRowLenght);
+			for (int i = 0; i < block; i++) {
+				//Primer pixel
+				PIXEL& pixel = (*pImage)(i * 2, j);
+				flag = i < block - 1 || bih.biWidth % 2 > 0;
+				RGBQUAD& color = paleta[(pRow[i] >> (flag ? 4 : 0)) & 0x0f];
+				pixel.b = color.rgbRed;
+				pixel.g = color.rgbGreen;
+				pixel.r = color.rgbBlue;
+				pixel.a = 0xff;
+				//Segundo pixel
+				if (flag) {
+					PIXEL& pixel = (*pImage)(i * 2 + 1, j);
+					RGBQUAD& color = paleta[(pRow[i]) & 0x0f];
+					pixel.b = color.rgbRed;
+					pixel.g = color.rgbGreen;
+					pixel.r = color.rgbBlue;
+					pixel.a = 0xff;
+				}
 			}
 		}
 		delete[] pRow;
-		return pImage; 
+		break; 
 	}
-	case 8:{ // 8bpp 256 colores Paletizadas
-		// En el peor de los casos se rellenan 3 bytes.		
-		// Leer paleta, 256 colores máximos.
-		RGBQUAD Paleta[256];
-		int nColors = bih.biClrUsed == 0 ? 256 : bih.biClrUsed;
-		in.read((char*)Paleta, nColors * sizeof(RGBQUAD));
-
-		// Leer pixeles.
-		unsigned long RowLength = 4 * ((bih.biWidth * bih.biBitCount + 31) / 32); // Bytes, no pixels. pixel -> bit. Cluster de 32 bits.
-		unsigned char* pRow = new unsigned char[RowLength];
-		CPDIImage* pImage = Create(bih.biWidth, bih.biHeight);
-		// Se lee de abajo hacia arriba.
-		for (int j = 0; j < bih.biHeight; j++) {
-			in.read((char*)pRow, RowLength);
+	case 8: {
+		RGBQUAD paleta[256];
+		int nColors = bih.biClrUsed ? bih.biClrUsed : 256;
+		in.read((char*)paleta, nColors * sizeof(RGBQUAD));
+		unsigned char* pRow = new unsigned char[nRowLenght];
+		for (int j = bih.biHeight - 1; j >= 0; j--) {
+			in.read((char*)pRow, nRowLenght);
 			for (int i = 0; i < bih.biWidth; i++) {
-				PIXEL& Pixel = (*pImage)(i, bih.biHeight - j - 1);
-				Pixel.r = Paleta[pRow[i]].rgbRed;
-				Pixel.g = Paleta[pRow[i]].rgbGreen;
-				Pixel.b = Paleta[pRow[i]].rgbBlue;
-				Pixel.a = -1; // es igual que (char)0xff;
+				RGBQUAD& color = paleta[pRow[i]];
+				PIXEL& pixel = (*pImage)(i, j);
+				pixel.b = color.rgbRed;
+				pixel.g = color.rgbGreen;
+				pixel.r = color.rgbBlue;
+				pixel.a = 0xff;
 			}
 		}
 		delete[] pRow;
-		return pImage;
+		break;
 	}
-	case 24: { 
-	// 24bpp TrueColor B8G8R8  No paletizados.
-	// Cada pixel es B8G8R8, es decir, el primer byte es el color B, el segundo byte es el color G, y el tercero es el color R.
-	// Tarea
-		/* No requiere paleta, leer byte a byte. */
-		// Leer pixeles.
-		unsigned long RowLength = (bih.biWidth * bih.biBitCount);
-		unsigned char* pRow = new unsigned char[RowLength];
-		CPDIImage* pImage = Create(bih.biWidth, bih.biHeight);
-		for (int j = 0; j < bih.biHeight; j++) {
-			/*in.read((char*)pRow, RowLength);
-			char* BGR; memset((char*)BGR, 0, 8);
-			for (int i = 0; i < RowLength; i++) {
-					
-			}*/
+	case 24: {
+		unsigned char* pRow = new unsigned char[nRowLenght];
+		for (int j = bih.biHeight - 1; j >= 0; j--) {
+			in.read((char*)pRow, nRowLenght);
+			for (int i = 0; i < bih.biWidth; i++){
+				PIXEL& pixel = (*pImage)(i, j);
+				pixel.r = pRow[(i * 3) + 0];
+				pixel.g = pRow[(i * 3) + 1];
+				pixel.b = pRow[(i * 3) + 2];
+				pixel.a = 0xff;
+			}
 		}
-		
-		return pImage;
+		delete[] pRow;
+		break;
 	}
-			 return NULL;
+	case 32: {
+		unsigned char* pRow = new unsigned char[nRowLenght];
+		for (int j = bih.biHeight - 1; j >= 0; j--) {
+			in.read((char*)pRow, nRowLenght);
+			for (int i = 0; i < bih.biWidth; i++) {
+				PIXEL& pixel = (*pImage)(i, j);
+				pixel.r = pRow[(i * 4) + 0];
+				pixel.g = pRow[(i * 4) + 1];
+				pixel.b = pRow[(i * 4) + 2];
+				pixel.a = pRow[(i * 4) + 3];
+			}
+		}
+		delete[] pRow;
+		break;
 	}
+	default:
+		pImage = NULL;
+	}
+	return pImage;
 }
 
 void CPDIImage::Draw(int x, int y, HDC hdc) {

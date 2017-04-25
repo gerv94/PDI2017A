@@ -1,3 +1,4 @@
-﻿  DXManager.cpp
+﻿  PDIImage.cpp
+c:\users\gerv1\documents\visual studio 2017\projects\pdi2017a\pdi2017a\pdiimage.cpp(201): warning C4715: 'CPDIImage::CreateFromFile': no todas las rutas de acceso de control devuelven un valor
   PDI2017A.vcxproj -> C:\Users\gerv1\Documents\Visual Studio 2017\Projects\PDI2017A\PDI2017A\bin\PDI2017Ad.exe
   PDI2017A.vcxproj -> bin\PDI2017Ad.pdb (Partial PDB)
