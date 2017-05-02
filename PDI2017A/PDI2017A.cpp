@@ -201,18 +201,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	break;
 	case WM_PAINT:
-
-
-		// TODO: Agregar cualquier código de dibujo que use hDC aquí...
+		// TODO: Agregar cualquier código de dibujo que use hdc aqui
 		/*CPDIImage* pImg = CPDIImage::Create(640, 480);
-
 		static float t = 0.0f;
 		for (int j = 0; j < 480; j++)
 			for (int i = 0; i < 640; i++) {
 				CPDIImage::PIXEL p = { 127+127*cos(8*t+i*3.141592/180), 127+127*sin(5*t+j*3.141592/180), t*i*j, 1 };
 				(*pImg)(i, j) = p;
 			}
-
 		t += 0.01;
 		pImg->Draw(0, 0, hdc);
 		CPDIImage::Destroy(pImg);
@@ -237,9 +233,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			//g_pImgSource->Draw(0, 0, hdc);
 			Clone->Draw(0, 0, hdc);
 			CPDIImage::Destroy(Clone);
-
 			g_pImgSource->Draw(0, 0, hdc);
 			EndPaint(hWnd, &ps);
+
 		}
 		else {
 			// 1.- Obtener el recurso destino (salida)

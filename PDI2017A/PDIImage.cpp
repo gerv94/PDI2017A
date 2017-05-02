@@ -105,7 +105,7 @@ CPDIImage * CPDIImage::CreateFromFile(const char * pszFileName)
 	case 1: {
 		RGBQUAD paleta[2];
 		int nColors = bih.biClrUsed ? bih.biClrUsed : 2;
-		in.read((char*)paleta, nColors * sizeof(RGBQUAD));
+		in.read((char*) paleta, nColors * sizeof(RGBQUAD));
 		unsigned char* pRow = new unsigned char[nRowLenght];
 		int block = (bih.biWidth + 7) / 8, totalBits;
 		for (int j = bih.biHeight - 1; j >= 0; j--) {
@@ -128,7 +128,7 @@ CPDIImage * CPDIImage::CreateFromFile(const char * pszFileName)
 	case 4: {
 		RGBQUAD paleta[16];
 		int nColors = bih.biClrUsed ? bih.biClrUsed : 16;
-		in.read((char*)paleta, nColors * sizeof(RGBQUAD));
+		in.read((char*) paleta, nColors * sizeof(RGBQUAD));
 		int block = (bih.biWidth + 1) / 2;
 		unsigned char* pRow = (unsigned char*) malloc(nRowLenght);
 		bool flag;
@@ -182,7 +182,7 @@ CPDIImage * CPDIImage::CreateFromFile(const char * pszFileName)
 			in.read((char*)pRow, nRowLenght);
 			for (int i = 0; i < bih.biWidth; i++){
 				PIXEL& pixel = (*pImage)(i, j);
-				pixel.r = pRow[(i * 3) + 0];
+				pixel.r = pRow[i * 3];
 				pixel.g = pRow[(i * 3) + 1];
 				pixel.b = pRow[(i * 3) + 2];
 				pixel.a = 0xff;
@@ -197,7 +197,7 @@ CPDIImage * CPDIImage::CreateFromFile(const char * pszFileName)
 			in.read((char*)pRow, nRowLenght);
 			for (int i = 0; i < bih.biWidth; i++) {
 				PIXEL& pixel = (*pImage)(i, j);
-				pixel.r = pRow[(i * 4) + 0];
+				pixel.r = pRow[i * 4];
 				pixel.g = pRow[(i * 4) + 1];
 				pixel.b = pRow[(i * 4) + 2];
 				pixel.a = pRow[(i * 4) + 3];
