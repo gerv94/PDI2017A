@@ -1,9 +1,11 @@
-﻿  PDI2017A.cpp
+﻿  stdafx.cpp
+  DXManager.cpp
+  PDI2017A.cpp
   PDIImage.cpp
-  Generating code
-  2 of 161 functions ( 1.2%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
-  Finished generating code
-  PDI2017A.vcxproj -> C:\Users\gerv1\Documents\Visual Studio 2017\Projects\PDI2017A\Win32\Release\PDI2017A.exe
-  PDI2017A.vcxproj -> C:\Users\gerv1\Documents\Visual Studio 2017\Projects\PDI2017A\Win32\Release\PDI2017A.pdb (Full PDB)
+  Generando código
+  159 of 161 functions (98.8%) were compiled, the rest were copied from previous compilation.
+    2 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Generación de código finalizada
+  PDI2017A.vcxproj -> C:\Users\German Rodriguez\Documents\Visual Studio 2017\Projects\PDI2017A\Win32\Release\PDI2017A.exe
+  PDI2017A.vcxproj -> C:\Users\German Rodriguez\Documents\Visual Studio 2017\Projects\PDI2017A\Win32\Release\PDI2017A.pdb (Full PDB)

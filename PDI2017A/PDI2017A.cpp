@@ -162,7 +162,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			ofn.lStructSize = sizeof(ofn);
 			ofn.hwndOwner = hWnd;
 			ofn.lpstrFile = szFileName;
-			ofn.lpstrFilter = "Archivos de imágenes BMP (*.bmp)\0*.bmp\0"; // Multinull string
+			ofn.lpstrFilter = "Archivos de imágen BMP (*.bmp)\0*.bmp\0"; // Multinull string
 			ofn.nMaxFile = 1023;
 			if (GetOpenFileNameA(&ofn)) {
 				if (g_pImgSource)
